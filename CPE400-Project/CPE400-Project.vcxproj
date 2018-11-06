@@ -115,6 +115,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="NodeFailure.cpp" />
+    <ClCompile Include="NodeManager.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="NodeManager.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
