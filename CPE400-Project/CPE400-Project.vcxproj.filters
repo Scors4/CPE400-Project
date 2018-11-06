@@ -21,9 +21,15 @@
     <ClCompile Include="NodeManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\List-Cycler\List-Cycler\ScLogger.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="NodeManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\List-Cycler\List-Cycler\ScLogger.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

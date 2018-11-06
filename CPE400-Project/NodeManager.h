@@ -9,5 +9,11 @@ public:
 
 	NodeManager();
 	~NodeManager();
+
+	void run();
+	void init();
+
+private:
+
 };
 
