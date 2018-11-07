@@ -1,19 +1,20 @@
 #pragma once
-
+#include "Node.h"
 
 class NodeManager
 {
 public:
 
-	char NEXT_ID;
-
 	NodeManager();
 	~NodeManager();
 
+	void init(int num_nodes,bool random);
 	void run();
-	void init();
 
 private:
 
-};
+	char NEXT_ID = 1;
+	int numNodes;
+	Node* nodes;
 
+};
