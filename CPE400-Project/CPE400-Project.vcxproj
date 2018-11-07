@@ -118,10 +118,12 @@
     <ClCompile Include="Node.cpp" />
     <ClCompile Include="NodeFailure.cpp" />
     <ClCompile Include="NodeManager.cpp" />
+    <ClCompile Include="ScThreadManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Node.h" />
     <ClInclude Include="NodeManager.h" />
+    <ClInclude Include="ScThreadManager.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

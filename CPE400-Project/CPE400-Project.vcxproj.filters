@@ -24,12 +24,18 @@
     <ClCompile Include="Node.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ScThreadManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="NodeManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Node.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ScThreadManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
