@@ -12,7 +12,8 @@ NodeManager::NodeManager()
 
 NodeManager::~NodeManager()
 {
-
+	delete nodes;
+	nodes = nullptr;
 }
 
 void NodeManager::init(int numNodes, bool random)
@@ -22,6 +23,7 @@ void NodeManager::init(int numNodes, bool random)
 	for (int i = 0; i < numNodes; i++)
 	{
 		tempn[i].setID(NEXT_ID++);
+		tempn[i].setRouteTableSize(numNodes);
 	}
 	nodes = tempn;
 	tempn = nullptr;
@@ -31,6 +33,6 @@ void NodeManager::run()
 {
 	for (int i = 0; i < numNodes; i++)
 	{
-		cout << "Node Number " << (int)nodes[i].getID() << endl;
+		nodes[i].printData();
 	}
 }
