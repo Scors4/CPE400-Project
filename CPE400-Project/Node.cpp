@@ -1,5 +1,6 @@
 #include "Node.h"
 #include <iostream>
+#include "ScThreadManager.h"
 
 using namespace std;
 
@@ -18,22 +19,45 @@ Node::~Node()
 
 }
 
+void Node::terminate()
+{
+	running = false;
+}
+
+void thread_access(Node* n)
+{
+	n->thread_run(n);
+}
+
+void Node::run(Node* n)
+{
+	running = true;
+	thread t(thread_access, n);
+	t.detach();
+}
+
+void Node::thread_run(Node* n)
+{
+
+}
+
 void Node::printData()
 {
-	cout << "Node ID: " << (int)ID << endl;
-	cout << "Neighbors: ";
+	std::cout << "Node ID: " << (int)ID << std::endl;
+	std::cout << "Neighbors: ";
 	for (int i = 0; i < 4; i++)
 	{
-		cout << (int)Neighbors[i];
+		std::cout << (int)Neighbors[i];
 		if (i < 3)
-			cout << ",";
+			std::cout << ",";
 	}
-	cout << endl;
+	std::cout << std::endl;
+	cout << "Number of known routes: " << routeTableSize << endl;
 	for (int i = 0; i < routeTableSize; i++)
 	{
-		cout << "Route to " << (int)routeTable[i] << " is via " << (int)routeHash[i] << endl;
+		std::cout << "Route to " << (int)routeTable[i] << " is via " << (int)routeHash[i] << std::endl;
 	}
-	cout << endl;
+	std::cout << std::endl;
 }
 
 void Node::setRouteTableSize(int size)

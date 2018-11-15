@@ -1,39 +1,45 @@
 #include "NodeManager.h"
 #include "Node.h"
+#include "ScThreadManager.h"
 #include <iostream>
 #include <thread>
 
 using namespace std;
 
 
-NodeManager::NodeManager()
+NodeManager::NodeManager() 
 {
-	
+	nodes = nullptr;
+	number_of_nodes = 0;
 }
 
 NodeManager::~NodeManager()
 {
-	delete nodes;
-	nodes = nullptr;
+	//ScThreadManager::terminate();
+	if (number_of_nodes)
+	{
+		delete[] nodes;
+		nodes = nullptr;
+	}
 }
 
 void NodeManager::init(int numNodes, bool random)
 {
-	this->numNodes = numNodes;
-	Node* tempn = new Node[numNodes];
-	for (int i = 0; i < numNodes; i++)
-	{
-		tempn[i].setID(NEXT_ID++);
-		tempn[i].setRouteTableSize(numNodes);
-	}
-	nodes = tempn;
-	tempn = nullptr;
+	ScThreadManager::init(numNodes);
+	number_of_nodes = numNodes;
 }
 
 void NodeManager::run()
 {
-	for (int i = 0; i < numNodes; i++)
-	{
-		nodes[i].printData();
-	}
+	
+}
+
+void NodeManager::terminate()
+{
+	ScThreadManager::terminate();
+}
+
+void NodeManager::printNodeData(int id)
+{
+	ScThreadManager::getNode(id)->printData();
 }

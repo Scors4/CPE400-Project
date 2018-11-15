@@ -1,27 +1,34 @@
 #pragma once
-#ifdef _WIN64 
-#include <Windows.h>
-#elif _linux_
-#include <pthread.h>
-#endif
+#ifndef _SCTHREADMANAGER_H
+#define _SCTHREADMANAGER_H
+#include "Node.h"
+#include <thread>
+#include <iostream>
+
+using namespace std;
 
 struct thread_data {
 	int m_id;
+	int thread_id;
+	Node* m_node;
+
 	thread_data(int id) : m_id(id) {}
+	thread_data() : m_id(0) {};
 };
 
-
-#ifdef _WIN64
 class ScThreadManager
 {
 public:
-	static HANDLE BuildThread(int id);
+
+	static void init(int size);
+	static void terminate();
+	static void buildNode(int id, int node_count);
+	static Node* getNode(int id);
 
 private:
-	HANDLE * tHandles;
+	static int number_of_threads;
+	static thread_data* tHandles;
 
 };
-
-#elif _linux_
 
 #endif

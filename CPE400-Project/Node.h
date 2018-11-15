@@ -1,4 +1,7 @@
 #pragma once
+#ifndef _NODE_H
+#define _NODE_H
+#include <thread>
 
 class Node
 {
@@ -8,12 +11,17 @@ public:
 	Node(char ID);
 	~Node();
 
+	void run(Node* n);
+	void terminate();
+
 	void printData();
 	void setRouteTableSize(int size);
 
 	char getID();
 	bool setID(char ID);
 	bool addNeighbor(char ID);
+
+	void thread_run(Node* n);
 
 private:
 
@@ -22,5 +30,10 @@ private:
 	int routeTableSize = 0;
 	int* routeTable;
 	int* routeHash;
-	//Packet* packet;
+
+	bool running;
+
+	std::thread personal_thread;
 };
+
+#endif
