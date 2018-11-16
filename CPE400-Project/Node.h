@@ -28,8 +28,8 @@ private:
 	char ID;
 	char Neighbors[4] = { 0,0,0,0 };
 	int routeTableSize = 0;
-	int* routeTable;
-	int* routeHash;
+	int* routeTable; //List of nodes in the map.  Can be pretty lengthy, but it's still relatively small.
+	int* routeHash; //List of nodes that go to the table's nodes, corresponding with the id - 1.
 
 	bool running;
 

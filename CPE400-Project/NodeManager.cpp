@@ -15,7 +15,7 @@ NodeManager::NodeManager()
 
 NodeManager::~NodeManager()
 {
-	//ScThreadManager::terminate();
+	ScThreadManager::terminate();
 	if (number_of_nodes)
 	{
 		delete[] nodes;
@@ -23,22 +23,22 @@ NodeManager::~NodeManager()
 	}
 }
 
+//Initiates the nodes and holds the number of nodes available.  Will be used
+//as a catch for user input that may be greater than numNodes.
 void NodeManager::init(int numNodes, bool random)
 {
 	ScThreadManager::init(numNodes);
 	number_of_nodes = numNodes;
 }
 
-void NodeManager::run()
-{
-	
-}
-
+//Used in bebugging, but not dealing with pre-compiler stuff just yet.
 void NodeManager::terminate()
 {
 	ScThreadManager::terminate();
 }
 
+//Get the node to print the data.  As this manager no longer handles the nodes directly,
+//it is now a call to ScThreadManager.
 void NodeManager::printNodeData(int id)
 {
 	ScThreadManager::getNode(id)->printData();

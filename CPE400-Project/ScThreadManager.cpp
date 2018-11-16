@@ -3,6 +3,7 @@
 thread_data* ScThreadManager::tHandles = nullptr;
 int ScThreadManager::number_of_threads = 0;
 
+//Terminates all the threads then deletes all avaialble pointers.
 void ScThreadManager::terminate()
 {
 	for (int i = 0; i < number_of_threads; i++)
@@ -19,6 +20,7 @@ void ScThreadManager::terminate()
 	cout << "Nodes terminated.  Ready to exit." << endl;
 }
 
+//Builds the thread_data array and builds the nodes to populate it.
 void ScThreadManager::init(int size)
 {
 	tHandles = new thread_data[size]();
@@ -30,6 +32,7 @@ void ScThreadManager::init(int size)
 	}
 }
 
+//Builds the node for the system, also triggers the thread to be created and run by the node.
 void ScThreadManager::buildNode(int id, int node_count)
 {
 	thread_data temp(id);
@@ -43,6 +46,7 @@ void ScThreadManager::buildNode(int id, int node_count)
 	nTemp = nullptr;
 }
 
+//Returns a pointer to the node with the requested ID.
 Node* ScThreadManager::getNode(int id)
 {
 	return tHandles[id-1].m_node;

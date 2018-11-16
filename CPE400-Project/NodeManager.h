@@ -3,6 +3,7 @@
 #define _NODEMANAGER_H
 #include "Node.h"
 
+
 class NodeManager
 {
 public:
@@ -10,8 +11,7 @@ public:
 	NodeManager();
 	~NodeManager();
 
-	void init(int num_nodes,bool random);
-	void run();
+	void init(int num_nodes, bool random);
 	void terminate();
 	void printNodeData(int id);
 

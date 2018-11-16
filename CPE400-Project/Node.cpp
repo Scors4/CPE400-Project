@@ -16,19 +16,29 @@ Node::Node(char ID)
 
 Node::~Node()
 {
+	if (routeTableSize)
+	{
+		delete[] routeTable;
+		routeTable = nullptr;
 
+		delete[] routeHash;
+		routeHash = nullptr;
+	}
 }
 
+//Terminates the thread by ending the runnable loop in thread_run.
 void Node::terminate()
 {
 	running = false;
 }
 
+//Function the thread can use to start the node it is assigned.  Passes in this node from a long chain.
 void thread_access(Node* n)
 {
 	n->thread_run(n);
 }
 
+//Creates this node's thread and detaches from the main process.
 void Node::run(Node* n)
 {
 	running = true;
@@ -36,11 +46,13 @@ void Node::run(Node* n)
 	t.detach();
 }
 
+//Thread runnable.  Holds the actual logic of the node.  That's the plan, anyway.
 void Node::thread_run(Node* n)
 {
 
 }
 
+//Prints the node data, such as ID, its Neighbors and the Routing table and hash.
 void Node::printData()
 {
 	std::cout << "Node ID: " << (int)ID << std::endl;
@@ -60,6 +72,7 @@ void Node::printData()
 	std::cout << std::endl;
 }
 
+//Sets the route table size.  For now, it's the size of the network.
 void Node::setRouteTableSize(int size)
 {
 	routeTableSize = size;
@@ -78,11 +91,13 @@ void Node::setRouteTableSize(int size)
 	tempHash = nullptr;
 }
 
+//Gets this node's ID, if necessary.
 char Node::getID()
 {
 	return ID;
 }
 
+//Sets this node's ID.
 bool Node::setID(char ID)
 {
 	if (this->ID != 0)
@@ -92,6 +107,8 @@ bool Node::setID(char ID)
 	return true;
 }
 
+//Adds the ID in the neighbor list if there is room. Returns true if the ID is already a neighbor
+//or is set as a neighbor.  Returns false if no room for a new neighbor.
 bool Node::addNeighbor(char ID)
 {
 	if (ID == this->ID || ID == 0)
