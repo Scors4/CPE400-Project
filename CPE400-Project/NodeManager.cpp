@@ -43,3 +43,8 @@ void NodeManager::printNodeData(int id)
 {
 	ScThreadManager::getNode(id)->printData();
 }
+
+Node* NodeManager::getNode(int id)
+{
+	return ScThreadManager::getNode(id);
+}

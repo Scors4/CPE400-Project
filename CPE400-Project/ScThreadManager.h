@@ -8,9 +8,8 @@
 using namespace std;
 
 struct thread_data {
-	int m_id;
-	int thread_id;
-	Node* m_node;
+	int m_id = 0;
+	Node* m_node = nullptr;
 
 	thread_data(int id) : m_id(id) {}
 	thread_data() : m_id(0) {};

@@ -115,14 +115,18 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="AdminCommands.cpp" />
     <ClCompile Include="Node.cpp" />
     <ClCompile Include="NodeFailure.cpp" />
     <ClCompile Include="NodeManager.cpp" />
+    <ClCompile Include="Packet.cpp" />
     <ClCompile Include="ScThreadManager.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AdminCommands.h" />
     <ClInclude Include="Node.h" />
     <ClInclude Include="NodeManager.h" />
+    <ClInclude Include="Packet.h" />
     <ClInclude Include="ScThreadManager.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -15,6 +15,8 @@ public:
 	void terminate();
 	void printNodeData(int id);
 
+	Node* getNode(int id);
+
 	Node* nodes;
 	int number_of_nodes;
 

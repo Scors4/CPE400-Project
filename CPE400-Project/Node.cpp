@@ -49,7 +49,15 @@ void Node::run(Node* n)
 //Thread runnable.  Holds the actual logic of the node.  That's the plan, anyway.
 void Node::thread_run(Node* n)
 {
-
+	do
+	{
+		while (packets_received)
+		{
+			cout << "Packet count: " << packets_received << endl;
+			advance_Buffer();
+		}
+		std::this_thread::sleep_for(250ms);
+	} while (running);
 }
 
 //Prints the node data, such as ID, its Neighbors and the Routing table and hash.
@@ -128,4 +136,29 @@ bool Node::addNeighbor(char ID)
 
 	Neighbors[i] = ID;
 	return true;
+}
+
+//Adds a packet to the buffer if there is room and the node is currently active.
+//If the buffer is full, it sends a failed response packet.
+//If the node is inactive, no response is sent.
+void Node::addPacketToBuffer(Packet* p, Node* sender)
+{
+	if (!active) { return; }
+	if (packets_received >= p_buffer_size)
+	{
+		Packet* r = new Packet();
+		sender->addPacketToBuffer(r, this);
+	}
+
+	p_buffer[packets_received] = *p;
+	packets_received++;
+}
+
+void Node::advance_Buffer()
+{
+	for (int i = 1; i < packets_received; i++ )
+	{
+		p_buffer[i - 1] = p_buffer[i];
+	}
+	packets_received--;
 }
