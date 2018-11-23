@@ -13,7 +13,7 @@ int main()
 	string st;
 	do {
 		getline(cin, st);
-	} while (AdminCommands::parseCommand(st));
+	} while (AdminCommands::parseCommand(st, nm));
 
 
 	delete nm;

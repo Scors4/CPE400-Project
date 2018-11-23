@@ -14,6 +14,8 @@ public:
 
 	void run(Node* n);
 	void terminate();
+	void kill();
+	void revive();
 
 	void printData();
 	void setRouteTableSize(int size);

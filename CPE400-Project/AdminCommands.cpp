@@ -2,7 +2,7 @@
 #include <iostream>
 
 
-bool AdminCommands::parseCommand(string st)
+bool AdminCommands::parseCommand(string st, NodeManager* nm)
 {
 	if (st._Equal("exit"))
 	{
@@ -15,7 +15,46 @@ bool AdminCommands::parseCommand(string st)
 
 	for (int i = 0; i < command_count; i++)
 	{
-		
+		if (commands[i]._Equal("ping"))
+		{
+			i++;
+			if (testID(commands[i], nm))
+			{
+				continue;
+			}
+
+			int node_id = stoi(commands[i]);
+			nm->printNodeData(node_id);
+		}
+		else if (commands[i]._Equal("kill"))
+		{
+			i++;
+			if (testID(commands[i], nm))
+			{
+				continue;
+			}
+			int node_id = stoi(commands[i]);
+			nm->getNode(node_id)->kill();
+		}
+		else if (commands[i]._Equal("revive"))
+		{
+			i++;
+			if (testID(commands[i], nm))
+			{
+				continue;
+			}
+
+			int node_id = stoi(commands[i]);
+			nm->getNode(node_id)->revive();
+		}
+		else if (commands[i]._Equal("send"))
+		{
+			if (testID(commands[i + 1], nm) || testID(commands[i + 2], nm))
+			{
+				i += 2;
+				continue;
+			}
+		}
 	}
 
 
@@ -52,4 +91,25 @@ string* AdminCommands::explodeString(string in, int* container)
 
 	*container = segments;
 	return temp;
+}
+
+bool AdminCommands::testID(string in, NodeManager* nm)
+{
+	int node_id = 0;
+	try {
+		node_id = stoi(in);
+	}
+	catch (exception e) {
+
+		cout << "ID unrecognized: " << in << endl;
+		return true;
+	}
+
+	if (node_id > nm->number_of_nodes)
+	{
+		cout << "Unable to process request.  Node ID given (" << node_id << ") does not exist." << endl;
+		return true;
+	}
+
+	return false;
 }

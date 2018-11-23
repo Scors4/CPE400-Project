@@ -2,6 +2,8 @@
 #include <iostream>
 #include "ScThreadManager.h"
 
+#define _SLEEP_TIME 100ms
+
 using namespace std;
 
 Node::Node()
@@ -51,12 +53,14 @@ void Node::thread_run(Node* n)
 {
 	do
 	{
-		while (packets_received)
+		if (!active) { std::this_thread::sleep_for(_SLEEP_TIME); }
+		if (!running) { break; }
+		if (packets_received)
 		{
-			cout << "Packet count: " << packets_received << endl;
+			cout << "Node " << ID << " packet count: " << packets_received << endl;
 			advance_Buffer();
 		}
-		std::this_thread::sleep_for(250ms);
+		std::this_thread::sleep_for(_SLEEP_TIME);
 	} while (running);
 }
 
@@ -64,6 +68,7 @@ void Node::thread_run(Node* n)
 void Node::printData()
 {
 	std::cout << "Node ID: " << (int)ID << std::endl;
+	std::cout << "Current status: " << (active ? "Active." : "Not Active.") << endl;
 	std::cout << "Neighbors: ";
 	for (int i = 0; i < 4; i++)
 	{
@@ -147,7 +152,10 @@ void Node::addPacketToBuffer(Packet* p, Node* sender)
 	if (packets_received >= p_buffer_size)
 	{
 		Packet* r = new Packet();
-		sender->addPacketToBuffer(r, this);
+		if(sender != nullptr)
+			sender->addPacketToBuffer(r, this);
+
+		return;
 	}
 
 	p_buffer[packets_received] = *p;
@@ -161,4 +169,14 @@ void Node::advance_Buffer()
 		p_buffer[i - 1] = p_buffer[i];
 	}
 	packets_received--;
+}
+
+void Node::kill()
+{
+	active = false;
+}
+
+void Node::revive()
+{
+	active = true;
 }
