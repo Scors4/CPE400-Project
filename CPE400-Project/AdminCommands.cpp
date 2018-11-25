@@ -93,6 +93,8 @@ string* AdminCommands::explodeString(string in, int* container)
 	return temp;
 }
 
+//Ensures the given ID is readable and valid (within the number of nodes the Manager
+//has available.)
 bool AdminCommands::testID(string in, NodeManager* nm)
 {
 	int node_id = 0;

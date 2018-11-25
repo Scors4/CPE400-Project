@@ -152,7 +152,7 @@ void Node::addPacketToBuffer(Packet* p, Node* sender)
 	if (packets_received >= p_buffer_size)
 	{
 		Packet* r = new Packet();
-		if(sender != nullptr)
+		if (sender != nullptr)
 			sender->addPacketToBuffer(r, this);
 
 		return;
@@ -162,6 +162,8 @@ void Node::addPacketToBuffer(Packet* p, Node* sender)
 	packets_received++;
 }
 
+//Moves all packets in buffer forward by one index
+//Not sure if this causes a memory leak or not
 void Node::advance_Buffer()
 {
 	for (int i = 1; i < packets_received; i++ )
@@ -171,11 +173,13 @@ void Node::advance_Buffer()
 	packets_received--;
 }
 
+//Disables this node
 void Node::kill()
 {
 	active = false;
 }
 
+//Re-enables this node
 void Node::revive()
 {
 	active = true;

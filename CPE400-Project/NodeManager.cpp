@@ -44,6 +44,7 @@ void NodeManager::printNodeData(int id)
 	ScThreadManager::getNode(id)->printData();
 }
 
+//Returns the node that is requested by ID.
 Node* NodeManager::getNode(int id)
 {
 	return ScThreadManager::getNode(id);
