@@ -17,7 +17,6 @@ public:
 
 	Node* getNode(int id);
 
-	Node* nodes;
 	int number_of_nodes;
 
 private:

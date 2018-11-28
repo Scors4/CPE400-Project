@@ -54,6 +54,44 @@ bool AdminCommands::parseCommand(string st, NodeManager* nm)
 				i += 2;
 				continue;
 			}
+
+			string data;
+			for (int j = i + 3; j < command_count; j++)
+			{
+				data.append(commands[j]);
+				if (j < command_count - 1)
+				{
+					data.append(" ");
+				}
+			}
+			
+			char* c = new char[data.length() + 1];
+			int c_i = 0;
+			for (c_i = 0; c_i < data.length(); c_i++)
+			{
+				c[c_i] = data[c_i];
+			}
+			c[c_i] = '\0';
+
+			int to = stoi(commands[i + 2]);
+			int from = stoi(commands[i + 1]);
+
+			Packet p(to, from, data.length(), 0x00, c);
+			nm->getNode(from)->addPacketToBuffer(p);
+
+			delete c;
+			c = nullptr;
+
+		}
+		else if (commands[i]._Equal("verbose"))
+		{
+			i++;
+			if (testID(commands[i], nm))
+			{
+				continue;
+			}
+			int node_id = stoi(commands[i]);
+			nm->getNode(node_id)->toggleVerbose();
 		}
 	}
 
@@ -107,7 +145,7 @@ bool AdminCommands::testID(string in, NodeManager* nm)
 		return true;
 	}
 
-	if (node_id > nm->number_of_nodes)
+	if (node_id > nm->number_of_nodes || node_id <= 0)
 	{
 		cout << "Unable to process request.  Node ID given (" << node_id << ") does not exist." << endl;
 		return true;

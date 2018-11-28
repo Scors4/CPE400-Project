@@ -19,6 +19,7 @@ class ScThreadManager
 {
 public:
 
+	static bool active;
 	static void init(int size);
 	static void terminate();
 	static void buildNode(int id, int node_count);

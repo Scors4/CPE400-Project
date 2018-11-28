@@ -2,10 +2,13 @@
 
 thread_data* ScThreadManager::tHandles = nullptr;
 int ScThreadManager::number_of_threads = 0;
+bool ScThreadManager::active = true;
 
 //Terminates all the threads then deletes all avaialble pointers.
 void ScThreadManager::terminate()
 {
+	active = false;
+
 	for (int i = 0; i < number_of_threads; i++)
 	{
 		tHandles[i].m_node->terminate();
