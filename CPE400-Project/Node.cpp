@@ -73,7 +73,57 @@ void Node::thread_run(Node* n)
 		if (!active) { std::this_thread::sleep_for(_SLEEP_TIME); }
 		if (packets_received)
 		{
-			
+			if (verbose)
+			{
+				cout << "Node " << (int)ID << " has " << packets_received << " " << ((packets_received > 1) ? "packets." : "packet.") << endl;
+				if (!rreq[0])
+				{
+					cout << "Current packet data: " << endl << endl;
+					cout << "Control flag: " << (p_buffer[0].getFlag(CTRL_FLAG) ? "set" : "unset") << "." << endl;
+					p_buffer[0].printPacket();
+					cout << endl;
+				}
+				else
+				{
+					cout << "Waiting on route request data." << endl;
+				}
+			}
+
+			if (p_buffer[0].getFlag(CTRL_FLAG))
+			{
+
+			}
+			else
+			{
+				if (ID == p_buffer[0].getTo())
+				{
+					cout << "Packet received by Node " << (int)ID << ": " << endl;
+					cout << p_buffer[0].getData() << endl;
+					adv_del = true;
+				}
+				else if (!hasRoute(p_buffer[0].getTo()))
+				{
+					if (!rreq[0])
+					{
+						if (verbose)
+							cout << "Route to node " << (int)p_buffer[0].getTo() << " from Node " << (int)ID << " is unavailable." << endl;
+						
+						rreq[0] = true;
+						send_rreq_p(p_buffer[0].getTo());
+					}
+
+					shift_Buffer();
+					adv = false;
+				}
+				else
+				{
+					char pass_ID = getNextInChain(p_buffer[0].getTo());
+					if (verbose)
+						cout << "Sending packet to Node " << (int)p_buffer[0].getTo() << " via node " << (int)pass_ID << "." << endl;
+					ScThreadManager::getNode(pass_ID)->addPacketToBuffer(p_buffer[0], this);
+
+				}
+			}
 
 			if(adv)
 				advance_Buffer(adv_del);
@@ -216,6 +266,7 @@ bool Node::addRandomNeighbor(char ID)
 		Neighbors[i] = 0;
 		return false;
 	}
+	routeHash[ID - 1] = ID;
 	return true;
 }
 
@@ -224,25 +275,20 @@ bool Node::addRandomNeighbor(char ID)
 //If the node is inactive, a false response is sent. (no power)
 bool Node::addPacketToBuffer(Packet p, Node* sender)
 {
-	try {
-		if (~active) { return false; }
-		if (packets_received >= p_buffer_size)
-		{
-			p.setFail();
-			if (sender != nullptr && sender->canAcceptPackets())
-				sender->addPacketToBuffer(p, this);
+	if (!active) { return false; }
+	if (packets_received >= p_buffer_size)
+	{
+		p.setFail();
 
-			return true;
-		}
+		if (sender != nullptr && sender->canAcceptPackets())
+			sender->addPacketToBuffer(p, this);
 
-		p_buffer[packets_received] = p;
-		packets_received++;
 		return true;
 	}
-	catch (char *e)
-	{
-		return false;
-	}
+
+	p_buffer[packets_received] = p;
+	packets_received++;
+	return true;
 }
 
 void Node::addPacketToBuffer(Packet p)
@@ -278,11 +324,8 @@ void Node::advance_Buffer(bool deleting)
 	for (int i = 1; i < packets_received; i++ )
 	{
 		p_buffer[i - 1] = p_buffer[i];
-		if (rreq[i])
-		{
-			rreq[i - 1] = rreq[i];
-			rreq[i] = false;
-		}
+		rreq[i - 1] = rreq[i];
+		rreq[i] = false;
 
 	}
 	packets_received--;
@@ -290,13 +333,17 @@ void Node::advance_Buffer(bool deleting)
 
 void Node::shift_Buffer()
 {
-	Packet p = p_buffer[0];
-	bool r = rreq[0];
-	advance_Buffer(true);
+	if (packets_received > 1)
+	{
+		Packet p = p_buffer[0];
+		bool r = rreq[0];
 
-	p_buffer[packets_received] = p;
-	rreq[packets_received] = r;
-	packets_received++;
+		advance_Buffer(true);
+
+		p_buffer[packets_received] = p;
+		rreq[packets_received] = r;
+		packets_received++;
+	}
 }
 
 bool Node::send_rreq_p(char target)
