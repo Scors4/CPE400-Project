@@ -3,7 +3,7 @@
 #include <random>
 #include "ScThreadManager.h"
 
-#define _SLEEP_TIME 2000ms
+#define _SLEEP_TIME 1000ms
 
 using namespace std;
 
@@ -12,7 +12,10 @@ Node::Node()
 	ID = 0;
 	std::this_thread::sleep_for(250ms);
 	for (int i = 0; i < p_buffer_size; i++)
+	{
 		rreq[i] = 0;
+		delay[i] = 0;
+	}
 }
 
 Node::Node(char ID)
@@ -20,7 +23,10 @@ Node::Node(char ID)
 	this->ID = ID;
 	std::this_thread::sleep_for(250ms);
 	for (int i = 0; i < p_buffer_size; i++)
+	{
 		rreq[i] = 0;
+		delay[i] = 0;
+	}
 }
 
 Node::~Node()
@@ -35,6 +41,9 @@ Node::~Node()
 
 		delete[] rreq;
 		rreq = nullptr;
+
+		delete[] delay;
+		delay = nullptr;
 	}
 }
 
@@ -80,6 +89,8 @@ void Node::thread_run(Node* n)
 				{
 					cout << "Current packet data: " << endl << endl;
 					cout << "Control flag: " << (p_buffer[0].getFlag(CTRL_FLAG) ? "set" : "unset") << "." << endl;
+					cout << "Acknowledgement flag: " << (p_buffer[0].getFlag(ACK_FLAG) ? "sed" : "unset") << "." << endl;
+					cout << "Fail flag: " << (p_buffer[0].getFlag(FAIL_FLAG) ? "set" : "unset") << "." << endl;
 					p_buffer[0].printPacket();
 					cout << endl;
 				}
@@ -91,7 +102,66 @@ void Node::thread_run(Node* n)
 
 			if (p_buffer[0].getFlag(CTRL_FLAG))
 			{
+				adv_del = true;
 
+				if (p_buffer[0].getFlag(FAIL_FLAG))
+				{
+					if (verbose)
+						cout << "Node " << (int)p_buffer[0].getTo() << " failure packet detected." << endl;
+					
+					if (cleanRouteHash(p_buffer[0].getTo()))
+					{
+						send_fail_p(p_buffer[0].getTo());
+					}
+					
+					adv_del = false;
+				}
+				else if (p_buffer[0].getFlag(ACK_FLAG))
+				{
+					char r_ID = p_buffer[0].getData()[0];
+					if (verbose)
+						cout << "Packet from leaf Node " << (int)r_ID << " detected." << endl;
+
+					if (routeHash[r_ID - 1] == 0)
+					{
+						routeHash[r_ID - 1] = p_buffer[0].getFrom();
+					}
+
+					if (p_buffer[0].getTo() != ID)
+					{
+						if (verbose)
+							cout << "Forwarding CTRL/ACK packet from Node " << (int)r_ID << "." << endl;
+						forward_rack_p();
+						adv_del = false;
+					}
+					else
+					{
+						if(verbose)
+							cout << "Acquired CTRL/ACK packet from Node " << (int)r_ID << " via Node " << (int)p_buffer[0].getFrom() << "." << endl;
+					}
+				}
+				else
+				{
+					char r_ID = p_buffer[0].getData()[0];
+					if (verbose)
+						cout << "Packet from root Node " << (int)r_ID << " detected." << endl;
+
+					if (routeHash[r_ID - 1] == 0)
+					{
+						routeHash[r_ID - 1] = p_buffer[0].getFrom();
+						forward_rreq_p();
+
+						if (p_buffer[0].getTo() == ID)
+						{
+							if (verbose)
+								cout << "Packet arrived at node " << (int)ID << "." << endl;
+
+							send_rack_p(r_ID);
+						}
+					}
+
+					
+				}
 			}
 			else
 			{
@@ -120,7 +190,26 @@ void Node::thread_run(Node* n)
 					char pass_ID = getNextInChain(p_buffer[0].getTo());
 					if (verbose)
 						cout << "Sending packet to Node " << (int)p_buffer[0].getTo() << " via node " << (int)pass_ID << "." << endl;
-					ScThreadManager::getNode(pass_ID)->addPacketToBuffer(p_buffer[0], this);
+					if (!ScThreadManager::getNode(pass_ID)->addPacketToBuffer(p_buffer[0], this))
+					{
+						if (verbose)
+							cout << "Sending failed.  Node " << (int)pass_ID << " is offline." << endl;
+
+						send_fail_p(pass_ID);
+						adv = false;
+
+						if (pass_ID == p_buffer[0].getTo())
+						{
+							char temp = p_buffer[0].getTo();
+							p_buffer->setFail();
+							p_buffer[0].setTo(p_buffer[0].getFrom());
+							p_buffer[0].setFrom(temp);
+						}
+						else
+						{
+							cleanRouteHash(pass_ID);
+						}
+					}
 
 				}
 			}
@@ -321,12 +410,17 @@ void Node::advance_Buffer(bool deleting)
 	if (deleting)
 		p_buffer[0].delete_data();
 
+	rreq[0] = false;
+	delay[0] = 0;
+
 	for (int i = 1; i < packets_received; i++ )
 	{
 		p_buffer[i - 1] = p_buffer[i];
 		rreq[i - 1] = rreq[i];
 		rreq[i] = false;
 
+		delay[i - 1] = delay[i];
+		delay[i] = 0;
 	}
 	packets_received--;
 }
@@ -387,17 +481,46 @@ void Node::forward_rreq_p()
 	c[i] = this->ID;
 	c[i + 1] = '\0';
 
-	Packet p(p_buffer[0].getTo(), this->ID, i, CTRL_FLAG, c);
+	Packet p(p_buffer[0].getTo(), this->ID, i + 1, CTRL_FLAG, c);
 	for (int j = 0; j < NEIGHBOR_COUNT; j++)
 	{
 		if (Neighbors[j] != 0 && Neighbors[j] != p_buffer[0].getFrom())
 		{
-			ScThreadManager::getNode(Neighbors[j])->addPacketToBuffer(p, this);
+			if (!ScThreadManager::getNode(Neighbors[j])->addPacketToBuffer(p, this) && p.getTo() == Neighbors[j])
+			{
+				send_fail_p(p.getTo());
+			}
 		}
-
 	}
 	delete c;
 	c = nullptr;
+}
+
+bool Node::send_rack_p(char target)
+{
+	char * c = new char[2];
+	c[0] = ID;
+	c[1] = '\0';
+
+	char pass_ID = getNextInChain(target);
+
+	Packet p(target, ID, 1, CTRL_FLAG | ACK_FLAG, c);
+
+	ScThreadManager::getNode(pass_ID)->addPacketToBuffer(p, this);
+
+
+	return true;
+}
+
+void Node::forward_rack_p()
+{
+	char pass_ID = getNextInChain(p_buffer[0].getTo());
+	if(verbose)
+		cout << "Forward to node " << (int)pass_ID << " ready." << endl;
+
+	p_buffer[0].setFrom(ID);
+
+	ScThreadManager::getNode(pass_ID)->addPacketToBuffer(p_buffer[0], this);
 }
 
 //Disables this node
@@ -428,12 +551,13 @@ char Node::getNextInChain(char ID)
 	return routeHash[ID-1];
 }
 
-void Node::send_fail_packets(char ID)
+void Node::send_fail_p(char ID)
 {
 	Packet p(ID, this->ID, 0, CTRL_FLAG | FAIL_FLAG, nullptr);
 	for (int i = 0; i < NEIGHBOR_COUNT; i++)
 	{
-		ScThreadManager::getNode(Neighbors[i])->addPacketToBuffer(p, this);
+		if(Neighbors[i] != ID)
+			ScThreadManager::getNode(Neighbors[i])->addPacketToBuffer(p, this);
 	}
 }
 
@@ -446,4 +570,22 @@ bool Node::isNeighbor(char ID)
 	}
 
 	return false;
+}
+
+bool Node::cleanRouteHash(char ID)
+{
+	if (verbose)
+		cout << "Removing Node " << (int)ID << " from Node " << (int)this->ID << " route table." << endl;
+
+	bool found = false;
+	for (int i = 0; i < routeTableSize; i++)
+	{
+		if (routeHash[i] == ID)
+		{
+			routeHash[i] = 0;
+			found = true;
+		}
+	}
+
+	return found;
 }

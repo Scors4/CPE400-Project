@@ -82,6 +82,7 @@ bool AdminCommands::parseCommand(string st, NodeManager* nm)
 			delete c;
 			c = nullptr;
 
+			break;
 		}
 		else if (commands[i]._Equal("verbose"))
 		{

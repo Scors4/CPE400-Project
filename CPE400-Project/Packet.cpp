@@ -250,7 +250,10 @@ bool Packet::getFlag(char flag)
 
 void Packet::delete_data()
 {
-	delete data;
-	data = nullptr;
-	dataSize = 0;
+	if (data != nullptr)
+	{
+		delete data;
+		data = nullptr;
+		dataSize = 0;
+	}
 }

@@ -49,17 +49,23 @@ private:
 	Packet * p_buffer = new Packet[p_buffer_size]; // Buffer of received packets.
 	int packets_received = 0; //Number of packets currently waiting in the buffer.
 	bool* rreq = new bool[p_buffer_size];
+	char* delay = new char[p_buffer_size];
+
+	//Build an ordered-pair check for Control packets to avoid dropped packets building new node routes.
 
 	bool addRandomNeighbor(char id);
 	bool hasRoute(char ID);
 	char getNextInChain(char ID);
 	bool isNeighbor(char ID);
+	bool cleanRouteHash(char ID);
 
 	void advance_Buffer(bool deleting);
 	void shift_Buffer();
 	bool send_rreq_p(char target);
 	void forward_rreq_p();
-	void send_fail_packets(char ID);
+	bool send_rack_p(char target);
+	void forward_rack_p();
+	void send_fail_p(char ID);
 
 	bool running = true;
 	bool active = true;
