@@ -9,6 +9,7 @@ Purpose: This file implements the Packet class
 #define _CRT_SECURE_NO_WARNINGS
 #include <iostream>
 #include <cstring>
+#include <bitset>
 #include "Packet.h"
 
 // Default constructor
@@ -113,52 +114,49 @@ void Packet::setAllFlags() {
 	flags |= 0xFF; // sets all bits
 }
 
+// Sets a single bit according to what position of the binary is desired
+void Packet::setFlagsBit(int bitPosition) {
+	flags |= 1 << bitPosition;
+}
+
 void Packet::setACK() {
 	// Binary: XXXX,XXX1
-
-	// to be completed
+	setFlagsBit(0);
 }
 
 void Packet::setCTRL() {
 	// Binary: XXXX,XX1X
-
-	// to be completed
+	setFlagsBit(1);
 }
 
 void Packet::setFail() {
 	// Binary: XXXX,X1XX
-
-	// to be completed
+	setFlagsBit(2);
 }
 
 void Packet::setBit3() {
 	// Binary: XXXX,1XXX
-
-	// to be completed
+	setFlagsBit(3);
 }
 
 void Packet::setBit4() {
 	// Binary: XXX1,XXXX
-
-	// to be completed
+	setFlagsBit(4);
 }
 
 void Packet::setBit5() {
 	// Binary: XX1X,XXXX
-
-	// to be completed
+	setFlagsBit(5);
 }
 
 void Packet::setBit6() {
 	// Binary: X1XX,XXXX
-
-	// to be completed
+	setFlagsBit(6);
 }
 
 void Packet::setBit7() {
 	// Binary: 1XXX,XXXX
-
-	// to be completed
+	setFlagsBit(7);
 }
 
 /*******************************************************************************
@@ -168,55 +166,146 @@ void Packet::clearAllFlags() {
 	// Binary: 0000,0000
 	// Hex: 00
 
-	flags &= ~0xFF; // clears all bits
+	flags &= 0x00; // clears all bits
+}
+
+// Clears a single bit according to what position of the binary is desired
+void Packet::clearFlagsBit(int bitPosition) {
+	flags &= ~(1 << bitPosition);
 }
 
 void Packet::clearACK() {
 	// Binary: XXXX,XXX0
-
-	// to be completed
+	clearFlagsBit(0);
 }
 
 void Packet::clearCTRL() {
 	// Binary: XXXX,XX0X
-
-	// to be completed
+	clearFlagsBit(1);
 }
 
 void Packet::clearFail() {
 	// Binary: XXXX,X0XX
-
-	// to be completed
+	clearFlagsBit(2);
 }
 
 void Packet::clearBit3() {
 	// Binary: XXXX,0XXX
-
-	// to be completed
+	clearFlagsBit(3);
 }
 
 void Packet::clearBit4() {
 	// Binary: XXX0,XXXX
-
-	// to be completed
+	clearFlagsBit(4);
 }
 
 void Packet::clearBit5() {
 	// Binary: XX0X,XXXX
-
-	// to be completed
+	clearFlagsBit(5);
 }
 
 void Packet::clearBit6() {
 	// Binary: X0XX,XXXX
-
-	// to be completed
+	clearFlagsBit(6);
 }
 
 void Packet::clearBit7() {
 	// Binary: 0XXX,XXXX
+	clearFlagsBit(7);
+}
 
-	// to be completed
+/*******************************************************************************
+Check flags
+*******************************************************************************/
+// This function is the base of all the flag set functions except allSet() and
+// allClear(). It checks if the K-th bit is true and returns 1 if it is
+// and 0 if it is not set.
+bool Packet::checkFlagsBit(int position) {
+	int mask;
+
+	mask = (flags >> (position));
+	if (mask & 1) {
+		return 1;
+	}
+	else {
+		return 0;
+	}
+}
+
+// Checks if all flags are set: returns true if all set, false if not
+bool Packet::allSet() {
+	if (flags == (char)0xFF) { // flags is type char
+		return 1;
+	}
+	else {
+		return 0;
+	}
+}
+
+// Checks if all flags are clear: returns true if all clear, false if not
+bool Packet::allClear() {
+	if (flags == (char)0x00) {
+		return 1;
+	}
+	else {
+		return 0;
+	}
+}
+
+// Returns true if the flag ACK is set, false if it is clear
+bool Packet::isACKSet() {
+	bool result = checkFlagsBit(0);
+
+	return result;
+}
+
+// Returns true if the flag CTRL is set, false if it is clear
+bool Packet::isCTRLSet() {
+	bool result = checkFlagsBit(1);
+
+	return result;
+}
+
+// Returns true if the flag Fail is set, false if it is clear
+bool Packet::isFailSet() {
+	bool result = checkFlagsBit(2);
+
+	return result;
+}
+
+// Returns true if the flag Bit3 is set, false if it is clear
+bool Packet::isBit3Set() {
+	bool result = checkFlagsBit(3);
+
+	return result;
+}
+
+// Returns true if the flag Bit4 is set, false if it is clear
+bool Packet::isBit4Set() {
+	bool result = checkFlagsBit(4);
+
+	return result;
+}
+
+// Returns true if the flag Bit5 is set, false if it is clear
+bool Packet::isBit5Set() {
+	bool result = checkFlagsBit(5);
+
+	return result;
+}
+
+// Returns true if the flag Bit6 is set, false if it is clear
+bool Packet::isBit6Set() {
+	bool result = checkFlagsBit(6);
+
+	return result;
+}
+
+// Returns true if the flag Bit7 is set, false if it is clear
+bool Packet::isBit7Set() {
+	bool result = checkFlagsBit(7);
+
+	return result;
 }
 
 // Implementation of miscellaneous utilites 
@@ -241,6 +330,11 @@ void Packet::printPacket() {
 	}
 
 	std::cout << "\n";
+}
+
+// Prints the character represented by flags out in binary
+void Packet::printFlagsBinary() {
+	std::cout << "flags = " << std::bitset<8>(flags) << "\n";
 }
 
 bool Packet::getFlag(char flag)

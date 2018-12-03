@@ -16,6 +16,11 @@ Node::Node()
 		rreq[i] = 0;
 		delay[i] = 0;
 	}
+
+	for (int i = 0; i < RREQ_COUNT; i++)
+	{
+		rreq_invalid[i] = 0;
+	}
 }
 
 Node::Node(char ID)
@@ -112,6 +117,7 @@ void Node::thread_run(Node* n)
 					if (cleanRouteHash(p_buffer[0].getTo()))
 					{
 						send_fail_p(p_buffer[0].getTo());
+						clearInvalidRREQs();
 					}
 					
 					adv_del = false;
@@ -146,11 +152,14 @@ void Node::thread_run(Node* n)
 					if (verbose)
 						cout << "Packet from root Node " << (int)r_ID << " detected." << endl;
 
-					if (routeHash[r_ID - 1] == 0)
+					if (isRREQvalid(p_buffer[0].getTo()))
 					{
-						routeHash[r_ID - 1] = p_buffer[0].getFrom();
-						forward_rreq_p();
-
+						if (routeHash[r_ID - 1] == 0)
+						{
+							routeHash[r_ID - 1] = p_buffer[0].getFrom();
+						}
+						
+						
 						if (p_buffer[0].getTo() == ID)
 						{
 							if (verbose)
@@ -158,6 +167,16 @@ void Node::thread_run(Node* n)
 
 							send_rack_p(r_ID);
 						}
+						else if (hasRoute(p_buffer[0].getTo()))
+						{
+							send_rack_p(r_ID, p_buffer[0].getTo());
+						}
+						else
+						{
+							forward_rreq_p();
+						}
+
+						addInvalidRREQ(p_buffer[0].getTo());
 					}
 
 					
@@ -168,6 +187,10 @@ void Node::thread_run(Node* n)
 				if (ID == p_buffer[0].getTo())
 				{
 					cout << "Packet received by Node " << (int)ID << ": " << endl;
+
+					if (p_buffer[0].getFlag(FAIL_FLAG))
+						cout << "Undeliverable to Node " << (int)p_buffer[0].getFrom() << "." << endl;
+
 					cout << p_buffer[0].getData() << endl;
 					adv_del = true;
 				}
@@ -177,13 +200,28 @@ void Node::thread_run(Node* n)
 					{
 						if (verbose)
 							cout << "Route to node " << (int)p_buffer[0].getTo() << " from Node " << (int)ID << " is unavailable." << endl;
-						
+
 						rreq[0] = true;
+						delay[0] = (ScThreadManager::getThreadCount() * 3) + 1;
 						send_rreq_p(p_buffer[0].getTo());
 					}
+					else if (delay[0])
+					{
+						if(verbose)
+							cout << "Packet to Node " << (int)p_buffer[0].getTo() << " on delay hold: " << (int)delay[0] << " ticks remaining." << endl;
 
-					shift_Buffer();
-					adv = false;
+						delay[0]--;
+					}
+
+					if (delay[0])
+					{
+						shift_Buffer();
+						adv = false;
+					}
+					else
+					{
+						cout << "Packet to Node " << (int)p_buffer[0].getTo() << " could not be delivered. TIMEOUT" << endl;
+					}
 				}
 				else
 				{
@@ -431,11 +469,13 @@ void Node::shift_Buffer()
 	{
 		Packet p = p_buffer[0];
 		bool r = rreq[0];
+		char c = delay[0];
 
 		advance_Buffer(true);
 
 		p_buffer[packets_received] = p;
 		rreq[packets_received] = r;
+		delay[packets_received] = c;
 		packets_received++;
 	}
 }
@@ -454,6 +494,9 @@ bool Node::send_rreq_p(char target)
 		return short_line;
 	else
 	{
+		if (verbose)
+			cout << "Sending route request packet for Node " << (int)target << "." << endl;
+
 		char * c = new char[2];
 		c[0] = this->ID;
 		c[1] = '\0';
@@ -510,6 +553,19 @@ bool Node::send_rack_p(char target)
 
 
 	return true;
+}
+
+void Node::send_rack_p(char target, char from)
+{
+	char * c = new char[2];
+	c[0] = from;
+	c[1] = '\0';
+
+	char pass_ID = getNextInChain(target);
+	
+	Packet p(target, ID, 1, CTRL_FLAG | ACK_FLAG, c);
+
+	ScThreadManager::getNode(pass_ID)->addPacketToBuffer(p, this);
 }
 
 void Node::forward_rack_p()
@@ -588,4 +644,47 @@ bool Node::cleanRouteHash(char ID)
 	}
 
 	return found;
+}
+
+bool Node::isRREQvalid(char ID)
+{
+	for (int i = 0; i < RREQ_COUNT; i++)
+	{
+		if (rreq_invalid[i] == ID)
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
+void Node::addInvalidRREQ(char ID)
+{
+	for (int i = 0; i < RREQ_COUNT; i++)
+	{
+		if (rreq_invalid[i] == ID)
+			return;
+
+		if (rreq_invalid[i] == 0)
+		{
+			rreq_invalid[i] = ID;
+			return;
+		}
+	}
+
+	for (int i = 1; i < RREQ_COUNT; i++)
+	{
+		rreq_invalid[i - 1] = rreq_invalid[i];
+	}
+
+	rreq_invalid[RREQ_COUNT - 1] = ID;
+}
+
+void Node::clearInvalidRREQs()
+{
+	for (int i = 0; i < RREQ_COUNT; i++)
+	{
+		rreq_invalid[i] = 0;
+	}
 }

@@ -3,6 +3,7 @@
 #define _NODE_H
 
 #define NEIGHBOR_COUNT 4
+#define RREQ_COUNT 4
 #include <thread>
 #include "Packet.h"
 
@@ -51,6 +52,8 @@ private:
 	bool* rreq = new bool[p_buffer_size];
 	char* delay = new char[p_buffer_size];
 
+	char* rreq_invalid = new char[RREQ_COUNT];
+
 	//Build an ordered-pair check for Control packets to avoid dropped packets building new node routes.
 
 	bool addRandomNeighbor(char id);
@@ -64,12 +67,17 @@ private:
 	bool send_rreq_p(char target);
 	void forward_rreq_p();
 	bool send_rack_p(char target);
+	void send_rack_p(char target, char from);
 	void forward_rack_p();
 	void send_fail_p(char ID);
 
 	bool running = true;
 	bool active = true;
 	bool verbose = false;
+
+	bool isRREQvalid(char ID);
+	void addInvalidRREQ(char ID);
+	void clearInvalidRREQs();
 
 	std::thread personal_thread;
 };

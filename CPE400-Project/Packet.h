@@ -43,12 +43,13 @@ public:
 	void setDataSize(int);
 	void setData(char*, int); // int calls setDataSize 
 
-	// Automatic flag manipulation
-	/*************************************************************************
-	Set flags
-	*************************************************************************/
-	// Set all flags
+	  // Automatic flag manipulation
+	  /*************************************************************************
+	  Set flags
+	  *************************************************************************/
+	  // Set all flags
 	void setAllFlags(); // 1111,1111 = 0xFF
+	void setFlagsBit(int); // function that sets a single bit in all set fcts
 	// Set ACK bit - bit 0 (right-most)
 	void setACK(); // XXXX,XXX1
 	// Set internal/control packet bit - bit 1
@@ -71,6 +72,7 @@ public:
 	*************************************************************************/
 	// Clear all flags
 	void clearAllFlags(); // 0000,0000 = 0x00
+	void clearFlagsBit(int); // fct that clears a single bit in all set fcts
 	// Clear ACK bit - bit 0 (right-most)
 	void clearACK(); // XXXX,XXX0
 	// Clear internal/control packet bit - bit 1
@@ -88,10 +90,37 @@ public:
 	// Clear undefined bit - bit 7 (left-most)
 	void clearBit7(); // 0XXX,XXXX
 
+	/*************************************************************************
+	Check flags
+	*************************************************************************/
+	// Uses a right shift to test the K-th bit in all check functions except
+	// allSet() and allClear()
+	bool checkFlagsBit(int);
+	// Checks if all flags are set: returns true if all set, false if not
+	bool allSet();
+	// Checks if all flags are clear: returns true if all clear, false if not
+	bool allClear();
+	// Returns true if the flag ACK is set, false if it is clear
+	bool isACKSet();
+	// Returns true if the flag CTRL is set, false if it is clear
+	bool isCTRLSet();
+	// Returns true if the flag Fail is set, false if it is clear
+	bool isFailSet();
+	// Returns true if the flag Bit3 is set, false if it is clear
+	bool isBit3Set();
+	// Returns true if the flag Bit4 is set, false if it is clear
+	bool isBit4Set();
+	// Returns true if the flag Bit5 is set, false if it is clear
+	bool isBit5Set();
+	// Returns true if the flag Bit6 is set, false if it is clear
+	bool isBit6Set();
+	// Returns true if the flag Bit7 is set, false if it is clear
+	bool isBit7Set();
+
 	// Miscellaneous utilities
 	// Prints the packet's variables
 	void printPacket();
-
+	void printFlagsBinary();
 	bool getFlag(char flag);
 
 	//Deallocation of the data c_string taken out of the destructor.

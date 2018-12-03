@@ -25,6 +25,8 @@ public:
 	static void buildNode(int id, int node_count);
 	static Node* getNode(int id);
 
+	static int getThreadCount();
+
 private:
 	static int number_of_threads;
 	static thread_data* tHandles;
