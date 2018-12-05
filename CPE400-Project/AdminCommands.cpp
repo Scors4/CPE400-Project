@@ -76,7 +76,7 @@ bool AdminCommands::parseCommand(string st, NodeManager* nm)
 			int to = stoi(commands[i + 2]);
 			int from = stoi(commands[i + 1]);
 
-			Packet p(to, from, data.length(), 0x00, c);
+			Packet p(to, from, (int)data.length(), 0x00, c);
 			nm->getNode(from)->addPacketToBuffer(p);
 
 			delete c;
@@ -93,6 +93,11 @@ bool AdminCommands::parseCommand(string st, NodeManager* nm)
 			}
 			int node_id = stoi(commands[i]);
 			nm->getNode(node_id)->toggleVerbose();
+		}
+		else if (commands[i]._Equal("list"))
+		{
+			i++;
+			listNodes(commands[i], nm);
 		}
 	}
 
@@ -153,4 +158,21 @@ bool AdminCommands::testID(string in, NodeManager* nm)
 	}
 
 	return false;
+}
+
+//List nodes using predefined keywords.
+void AdminCommands::listNodes(string in, NodeManager* nm)
+{
+	for (int i = 1; i <= nm->number_of_nodes; i++)
+	{
+		Node* n = nm->getNode(i);
+		if (in._Equal("dead") && !n->getActive())
+		{
+			cout << "Node " << i << " status: dead." << endl;
+		}
+		else if (in._Equal("live") && n->getActive())
+		{
+			cout << "Node " << i << " status: live." << endl;
+		}
+	}
 }

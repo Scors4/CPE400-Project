@@ -17,6 +17,7 @@ private:
 
 	static string* explodeString(string in, int* count);
 	static bool testID(string in, NodeManager* nm);
+	static void listNodes(string in, NodeManager* nm);
 };
 
 #endif

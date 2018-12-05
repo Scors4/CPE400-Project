@@ -3,7 +3,7 @@
 #include <random>
 #include "ScThreadManager.h"
 
-#define _SLEEP_TIME 1000ms
+#define _SLEEP_TIME 50ms
 
 using namespace std;
 
@@ -52,6 +52,7 @@ Node::~Node()
 	}
 }
 
+//Override equals to allow comparison to integers.  Not really used, but is here if I need to use it.
 bool Node::operator== (int in)
 {
 	return ID == in;
@@ -94,7 +95,7 @@ void Node::thread_run(Node* n)
 				{
 					cout << "Current packet data: " << endl << endl;
 					cout << "Control flag: " << (p_buffer[0].getFlag(CTRL_FLAG) ? "set" : "unset") << "." << endl;
-					cout << "Acknowledgement flag: " << (p_buffer[0].getFlag(ACK_FLAG) ? "sed" : "unset") << "." << endl;
+					cout << "Acknowledgement flag: " << (p_buffer[0].getFlag(ACK_FLAG) ? "set" : "unset") << "." << endl;
 					cout << "Fail flag: " << (p_buffer[0].getFlag(FAIL_FLAG) ? "set" : "unset") << "." << endl;
 					p_buffer[0].printPacket();
 					cout << endl;
@@ -114,10 +115,39 @@ void Node::thread_run(Node* n)
 					if (verbose)
 						cout << "Node " << (int)p_buffer[0].getTo() << " failure packet detected." << endl;
 					
-					if (cleanRouteHash(p_buffer[0].getTo()))
+					if (p_buffer[0].getFlag(ACK_FLAG))
 					{
-						send_fail_p(p_buffer[0].getTo());
-						clearInvalidRREQs();
+						if (delay[0])
+						{
+							if (verbose)
+								cout << "Node " << (int)ID << " holding RREQ deleting for " << (int)delay[0] << " more ticks." << endl;
+
+							delay[0]--;
+							shift_Buffer();
+							adv = false;
+						}
+						else
+						{
+							if (verbose)
+								cout << "Deleting Invalid RREQs table in Node " << (int)ID << "." << endl;
+
+							clearInvalidRREQs();
+						}
+					}
+					else
+					{
+						if (hasRoute(p_buffer[0].getTo()) || isRREQvalid(p_buffer[0].getTo()))
+						{
+							send_fail_p(p_buffer[0].getTo());
+							addInvalidRREQ(p_buffer[0].getTo());
+
+							cleanRouteHash(p_buffer[0].getTo());
+
+							Packet p(ID, ID, 0, FAIL_FLAG | ACK_FLAG | CTRL_FLAG, nullptr);
+							addPacketToBuffer(p, p_buffer_size * 3);
+							adv = false;
+							shift_Buffer();
+						}
 					}
 					
 					adv_del = false;
@@ -175,7 +205,7 @@ void Node::thread_run(Node* n)
 						{
 							forward_rreq_p();
 						}
-
+						
 						addInvalidRREQ(p_buffer[0].getTo());
 					}
 
@@ -201,26 +231,28 @@ void Node::thread_run(Node* n)
 						if (verbose)
 							cout << "Route to node " << (int)p_buffer[0].getTo() << " from Node " << (int)ID << " is unavailable." << endl;
 
-						rreq[0] = true;
-						delay[0] = (ScThreadManager::getThreadCount() * 3) + 1;
-						send_rreq_p(p_buffer[0].getTo());
+						if (!delay[0])
+						{
+							rreq[0] = true;
+							delay[0] = (ScThreadManager::getThreadCount() * 3) + 1;
+							send_rreq_p(p_buffer[0].getTo());
+						}
+						else
+						{
+							if (verbose)
+								cout << "Waiting for " << (int)delay[0] << " ticks before attempting RREQ." << endl;
+							delay[0]--;
+						}
 					}
-					else if (delay[0])
-					{
-						if(verbose)
-							cout << "Packet to Node " << (int)p_buffer[0].getTo() << " on delay hold: " << (int)delay[0] << " ticks remaining." << endl;
 
-						delay[0]--;
-					}
-
-					if (delay[0])
+					if (delay[0] || !rreq[0])
 					{
 						shift_Buffer();
 						adv = false;
 					}
-					else
+					else if (rreq[0])
 					{
-						cout << "Packet to Node " << (int)p_buffer[0].getTo() << " could not be delivered. TIMEOUT" << endl;
+						cout << "Packet to Node " << (int)p_buffer[0].getTo() << " could not be delivered. <TIMEOUT>" << endl;
 					}
 				}
 				else
@@ -246,6 +278,7 @@ void Node::thread_run(Node* n)
 						else
 						{
 							cleanRouteHash(pass_ID);
+							delay[0] = (p_buffer_size) * 2;
 						}
 					}
 
@@ -275,12 +308,15 @@ void Node::printData()
 			std::cout << ",";
 	}
 	std::cout << std::endl;
-	cout << "Number of known routes: " << routeTableSize << endl;
-	for (int i = 0; i < routeTableSize; i++)
+	if (verbose)
 	{
-		std::cout << "Route to " << (int)routeTable[i] << " is via " << (int)routeHash[i] << std::endl;
+		cout << "Number of known routes: " << routeTableSize << endl;
+		for (int i = 0; i < routeTableSize; i++)
+		{
+			std::cout << "Route to " << (int)routeTable[i] << " is via " << (int)routeHash[i] << std::endl;
+		}
+		std::cout << std::endl;
 	}
-	std::cout << std::endl;
 }
 
 //Sets the route table size.  For now, it's the size of the network.
@@ -318,6 +354,13 @@ bool Node::setID(char ID)
 	return true;
 }
 
+//Returns the node's active state.
+bool Node::getActive()
+{
+	return active;
+}
+
+//Builds the random neighbor tables.  Has an in-built limiter so randomizing does not freeze program on startup.
 void Node::randomizeNeighbors(int max_node_id)
 {
 	random_device rd;
@@ -418,6 +461,7 @@ bool Node::addPacketToBuffer(Packet p, Node* sender)
 	return true;
 }
 
+//Adds a packet to the buffer, but is not used by nodes.  This is for user-generated packets.
 void Node::addPacketToBuffer(Packet p)
 {
 	if (!active)
@@ -436,6 +480,13 @@ void Node::addPacketToBuffer(Packet p)
 	packets_received++;
 }
 
+void Node::addPacketToBuffer(Packet p, int delay)
+{
+	p_buffer[0] = p;
+	this->delay[0] = delay;
+}
+
+//Simple check to prevent crashing of the threads. Normally would not be implemented in real world designs.
 bool Node::canAcceptPackets()
 {
 	return packets_received < p_buffer_size;
@@ -463,6 +514,7 @@ void Node::advance_Buffer(bool deleting)
 	packets_received--;
 }
 
+//Moves packet buffer synched content to the end of the queue, allowing other packets to be processed.
 void Node::shift_Buffer()
 {
 	if (packets_received > 1)
@@ -471,7 +523,7 @@ void Node::shift_Buffer()
 		bool r = rreq[0];
 		char c = delay[0];
 
-		advance_Buffer(true);
+		advance_Buffer(!p_buffer[0].getFlag(FAIL_FLAG));
 
 		p_buffer[packets_received] = p;
 		rreq[packets_received] = r;
@@ -480,6 +532,8 @@ void Node::shift_Buffer()
 	}
 }
 
+//Sends the initial RREQ packet to the network.
+//This holds the node's ID in the data and uses it as the root.
 bool Node::send_rreq_p(char target)
 {
 	bool short_line = false;
@@ -503,7 +557,8 @@ bool Node::send_rreq_p(char target)
 		Packet p(target, ID, 1, CTRL_FLAG, c);
 		for (int i = 0; i < NEIGHBOR_COUNT; i++)
 		{
-			ScThreadManager::getNode(Neighbors[i])->addPacketToBuffer(p, this);
+			if(Neighbors[i])
+				ScThreadManager::getNode(Neighbors[i])->addPacketToBuffer(p, this);
 		}
 
 		delete c;
@@ -513,6 +568,8 @@ bool Node::send_rreq_p(char target)
 	return false;
 }
 
+//Forwards an existing route request packet.
+//Attaches sending node's ID to the data as well as modifying the FROM field of the packet to match.
 void Node::forward_rreq_p()
 {
 	char* c = new char[p_buffer[0].getDataSize() + 2];
@@ -527,7 +584,7 @@ void Node::forward_rreq_p()
 	Packet p(p_buffer[0].getTo(), this->ID, i + 1, CTRL_FLAG, c);
 	for (int j = 0; j < NEIGHBOR_COUNT; j++)
 	{
-		if (Neighbors[j] != 0 && Neighbors[j] != p_buffer[0].getFrom())
+		if (Neighbors[j] && Neighbors[j] != p_buffer[0].getFrom())
 		{
 			if (!ScThreadManager::getNode(Neighbors[j])->addPacketToBuffer(p, this) && p.getTo() == Neighbors[j])
 			{
@@ -539,6 +596,7 @@ void Node::forward_rreq_p()
 	c = nullptr;
 }
 
+//Sends the route acknowledgement packet. This is sent back along the path created by the rreq packet.
 bool Node::send_rack_p(char target)
 {
 	char * c = new char[2];
@@ -555,6 +613,7 @@ bool Node::send_rack_p(char target)
 	return true;
 }
 
+//Same as the previous, only allows a false from field to be written.  Used by intercepting nodes that have routes to the target.
 void Node::send_rack_p(char target, char from)
 {
 	char * c = new char[2];
@@ -568,6 +627,8 @@ void Node::send_rack_p(char target, char from)
 	ScThreadManager::getNode(pass_ID)->addPacketToBuffer(p, this);
 }
 
+//Forwards route ack packet.
+//Just sends it along.
 void Node::forward_rack_p()
 {
 	char pass_ID = getNextInChain(p_buffer[0].getTo());
@@ -588,35 +649,45 @@ void Node::kill()
 //Re-enables this node
 void Node::revive()
 {
+	for (int i = 0; i < routeTableSize; i++)
+	{
+		routeHash[i] = 0;
+	}
+
 	active = true;
 }
 
+//Toggles debug information.
 void Node::toggleVerbose()
 {
 	verbose = !verbose;
 	cout << "Node " << (int)ID << " verbose: " << (verbose ? "Enabled" : "Disabled") << endl;
 }
 
+//If this node has a route to the target ID
 bool Node::hasRoute(char ID)
 {
 	return (routeHash[ID - 1] != 0);
 }
 
+//Gets the next node along the route to the ID.
 char Node::getNextInChain(char ID)
 {
 	return routeHash[ID-1];
 }
 
+//Fail packet sent when a failed node is detected.
 void Node::send_fail_p(char ID)
 {
 	Packet p(ID, this->ID, 0, CTRL_FLAG | FAIL_FLAG, nullptr);
 	for (int i = 0; i < NEIGHBOR_COUNT; i++)
 	{
-		if(Neighbors[i] != ID)
+		if(Neighbors[i] && Neighbors[i] != ID)
 			ScThreadManager::getNode(Neighbors[i])->addPacketToBuffer(p, this);
 	}
 }
 
+//Is the ID a neighbor?
 bool Node::isNeighbor(char ID)
 {
 	for (int i = 0; i < NEIGHBOR_COUNT; i++)
@@ -628,6 +699,7 @@ bool Node::isNeighbor(char ID)
 	return false;
 }
 
+//Cleans a certain ID from the route table.  Used on failed nodes.
 bool Node::cleanRouteHash(char ID)
 {
 	if (verbose)
@@ -646,6 +718,7 @@ bool Node::cleanRouteHash(char ID)
 	return found;
 }
 
+//Is the Route Request ID valid for processing.
 bool Node::isRREQvalid(char ID)
 {
 	for (int i = 0; i < RREQ_COUNT; i++)
@@ -659,6 +732,7 @@ bool Node::isRREQvalid(char ID)
 	return true;
 }
 
+//Adds a route requesting ID as invalid.
 void Node::addInvalidRREQ(char ID)
 {
 	for (int i = 0; i < RREQ_COUNT; i++)
@@ -681,6 +755,7 @@ void Node::addInvalidRREQ(char ID)
 	rreq_invalid[RREQ_COUNT - 1] = ID;
 }
 
+//Clears invalid route request table.  Allows for route requests to be remade.
 void Node::clearInvalidRREQs()
 {
 	for (int i = 0; i < RREQ_COUNT; i++)

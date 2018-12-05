@@ -55,6 +55,7 @@ Node* ScThreadManager::getNode(int id)
 	return tHandles[id-1].m_node;
 }
 
+//Returns the number of threads the system should be running.
 int ScThreadManager::getThreadCount()
 {
 	return number_of_threads;

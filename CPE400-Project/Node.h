@@ -27,6 +27,7 @@ public:
 
 	char getID();
 	bool setID(char ID);
+	bool getActive();
 	void toggleVerbose();
 	bool addNeighbor(char ID);
 	void randomizeNeighbors(int max_node_id);
@@ -78,6 +79,8 @@ private:
 	bool isRREQvalid(char ID);
 	void addInvalidRREQ(char ID);
 	void clearInvalidRREQs();
+
+	void addPacketToBuffer(Packet p, int delay);
 
 	std::thread personal_thread;
 };

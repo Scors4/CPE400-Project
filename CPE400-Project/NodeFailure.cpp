@@ -8,7 +8,7 @@ int main()
 {
 	NodeManager* nm = new NodeManager();
 
-	nm->init(10, true);
+	nm->init(50, true);
 	cout << "Nodes now initialized.  Awaiting commands: ";
 	
 	string st;

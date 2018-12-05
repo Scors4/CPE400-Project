@@ -11,6 +11,7 @@ Purpose: This file is the header to the Packet class
 #define ACK_FLAG 0x01
 #define CTRL_FLAG 0x02
 #define FAIL_FLAG 0x04
+#define FLAG_4 0x08
 
 
 class Packet {
